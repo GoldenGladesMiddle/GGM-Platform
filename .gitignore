@@ -1,7 +1,15 @@
+# Dependencies & Build
 node_modules/
-.env
+.next/
+dist/
+
+# OS files
 .DS_Store
+
+# Logs
 *.log
+
+# Environment variables (use leading slash or explicit paths)
 .env
-*.env
-apps/*/.env
+.env.*
+!.env.example
