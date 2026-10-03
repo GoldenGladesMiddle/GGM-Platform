@@ -1,0 +1,14 @@
+{
+  "name": "ggm-careers",
+  "version": "1.0.0",
+  "description": "GGM Careers Discord Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.0",
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7"
+  }
+}

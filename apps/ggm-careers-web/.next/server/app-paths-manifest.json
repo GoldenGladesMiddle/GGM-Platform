@@ -1,0 +1,8 @@
+{
+  "/page": "app/page.js",
+  "/apply/academics/page": "app/apply/academics/page.js",
+  "/applicant/page": "app/applicant/page.js",
+  "/recruiter/page": "app/recruiter/page.js",
+  "/apply/academics/science-instructional-assistant/page": "app/apply/academics/science-instructional-assistant/page.js",
+  "/portal/page": "app/portal/page.js"
+}
