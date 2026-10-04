@@ -16,6 +16,9 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  // Redirect straight to the applicant portal (/applicant) after login
-  return NextResponse.redirect(new URL('/applicant', requestUrl.origin));
+  // Define your custom production domain as the hardcoded base URL
+  const customDomain = 'https://careers.goldengladesms.org';
+
+  // Redirect straight to the applicant portal on your custom domain
+  return NextResponse.redirect(new URL('/applicant', customDomain));
 }
