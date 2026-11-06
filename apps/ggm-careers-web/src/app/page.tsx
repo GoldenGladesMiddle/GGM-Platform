@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '../lib/supabase';
 
 export const revalidate = 0;
@@ -71,9 +72,14 @@ export default async function JobBoardPage() {
           <div className="lg:col-span-5 hidden lg:flex justify-center items-center relative">
             <div className="absolute w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="relative z-10 p-8 rounded-3xl bg-slate-800/40 border border-slate-700/50 backdrop-blur-md shadow-2xl text-center space-y-4 max-w-sm">
-              <div className="w-20 h-20 mx-auto bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-lg">
-                GGM
-              </div>
+              <Image
+                src="/logo.png"
+                alt="Golden Glades Middle School logo"
+                width={96}
+                height={96}
+                className="mx-auto object-contain drop-shadow-lg"
+                priority
+              />
               <div>
                 <h3 className="text-lg font-bold text-white">Golden Glades Campus</h3>
                 <p className="text-xs text-slate-400 mt-1">Empowering students and supporting faculty in a modern academic environment.</p>
