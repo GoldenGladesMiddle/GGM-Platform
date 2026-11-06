@@ -4,13 +4,12 @@ import { supabase } from '../lib/supabase';
 export const revalidate = 0;
 
 export default async function JobBoardPage() {
-  const { data: jobs, error } = await supabase
+  const { data: jobs } = await supabase
     .from('careers_jobs')
     .select('*')
     .eq('is_open', true)
     .order('created_at', { ascending: false });
 
-  const hasError = !!error;
   const jobList = jobs || [];
   const totalOpenings = jobList.length;
   const departments = Array.from(new Set(jobList.map((j) => j.department)));
@@ -44,7 +43,7 @@ export default async function JobBoardPage() {
 
             <div className="flex flex-wrap items-center gap-4 pt-1">
               <a
-                href="#openings"
+                href="#departments"
                 className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-lg shadow-blue-600/30"
               >
                 Explore Openings ↓
@@ -87,99 +86,6 @@ export default async function JobBoardPage() {
           </div>
 
         </div>
-      </div>
-
-      {/* SEARCH & FILTER TOOLBAR */}
-      <div id="openings" className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <div>
-            <h2 className="text-2xl font-extrabold text-slate-900">Current Opportunities</h2>
-            <p className="text-slate-600 text-sm">Filter positions or search by department keyword.</p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <div className="relative flex-1 sm:w-64">
-              <input
-                type="text"
-                placeholder="Search job title or keyword..."
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
-            <select className="bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600">
-              <option value="">All Departments</option>
-              <option value="Administration">Administration</option>
-              <option value="Student Services">Student Services</option>
-              <option value="Academics">Academics</option>
-            </select>
-          </div>
-        </div>
-
-        {hasError ? (
-          <div className="flex items-center gap-3.5 p-4 text-red-800 bg-red-50 border border-red-200 rounded-2xl shadow-sm">
-            <svg className="w-6 h-6 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div className="text-sm">
-              <span className="font-bold block">Unable to connect to job database</span>
-              <span className="text-red-700">Please try refreshing the page or contact Golden Glades Human Resources.</span>
-            </div>
-          </div>
-        ) : jobList.length === 0 ? (
-          <div className="p-12 rounded-3xl bg-white border border-slate-200 text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 mx-auto bg-blue-50 text-blue-800 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-              📂
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-xl font-bold text-slate-900">No Open Positions Currently Available</h3>
-              <p className="text-slate-600 text-sm max-w-md mx-auto leading-relaxed">
-                All staff positions are currently filled. Check back regularly for newly published job postings or visit the school homepage for campus updates.
-              </p>
-            </div>
-            <div className="pt-2 flex justify-center gap-3">
-              <a
-                href="https://www.goldengladesms.org"
-                className="inline-flex items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow-sm"
-              >
-                Return to School Home
-              </a>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {jobList.map((job) => (
-              <div
-                key={job.id}
-                className="group p-6 rounded-2xl bg-white border border-slate-200 hover:border-blue-600 hover:shadow-md transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-6"
-              >
-                <div className="space-y-2 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-blue-50 text-blue-900 text-xs px-3 py-1 rounded-md font-bold border border-blue-200">
-                      {job.department}
-                    </span>
-                    <span className="text-xs text-slate-500 font-mono">Job ID: #{job.id}</span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-900 transition-colors">
-                    {job.title}
-                  </h3>
-
-                  <p className="text-slate-600 text-sm line-clamp-2 leading-relaxed">
-                    {job.description}
-                  </p>
-                </div>
-
-                <div className="shrink-0">
-                  <Link
-                    href={`/apply/${job.id}`}
-                    className="w-full md:w-auto inline-flex items-center justify-center bg-blue-900 hover:bg-blue-800 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow"
-                  >
-                    Apply for Position →
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* DEPARTMENT CARDS */}
