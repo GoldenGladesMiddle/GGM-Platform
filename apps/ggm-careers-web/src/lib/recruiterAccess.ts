@@ -1,23 +1,21 @@
 import { supabase } from '@/lib/supabase';
 
-export const ALLOWED_ROLES = ['recruiter', 'admin'];
-
 /**
- * Returns true if the user is a recruiter or admin.
- * Checks app_metadata.role first (only editable by the server/service role),
- * then the user_roles table. Never use user_metadata for this: users can edit it themselves.
- * Throws if the role lookup itself fails, so callers can fail closed.
+ * Asks the server whether the signed-in user has the Employment Director role in Discord.
+ * Throws if the check itself fails, so callers can fail closed.
+ * (The optional argument is ignored; it only keeps older call sites working.)
  */
-export async function hasRecruiterAccess(user: { id: string; app_metadata?: any }): Promise<boolean> {
-  const metaRole = user.app_metadata?.role;
-  if (metaRole && ALLOWED_ROLES.includes(metaRole)) return true;
+export async function hasRecruiterAccess(_user?: unknown): Promise<boolean> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return false;
 
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id);
+  const res = await fetch('/api/verify-access', {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    cache: 'no-store',
+  });
 
-  if (error) throw error;
+  if (!res.ok) throw new Error('Access verification failed');
 
-  return (data || []).some((r: { role: string }) => ALLOWED_ROLES.includes(r.role));
+  const json = await res.json();
+  return !!json.allowed;
 }
