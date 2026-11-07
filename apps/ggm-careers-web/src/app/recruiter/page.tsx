@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { hasRecruiterAccess } from '@/lib/recruiterAccess';
 
 interface Application {
   id: string;
@@ -28,8 +29,6 @@ interface RobloxInfo {
 }
 
 type Stage = 'pending' | 'background_check' | 'approved' | 'rejected' | 'blacklisted';
-
-const RECRUITER_ROLE_ID = '1555928995663577088';
 
 const QUESTION_LABELS: Record<string, string> = {
   rpName: 'Roleplay Character Name / Alias',
@@ -123,33 +122,25 @@ export default function RecruiterPortalPage() {
           'Recruiter',
       });
 
-      const providerToken = (session as any).provider_token;
-
       try {
-        const memberRes = await fetch(`https://discord.com/api/users/@me/guilds/${process.env.NEXT_PUBLIC_DISCORD_GUILD_ID}/member`, {
-          headers: { Authorization: `Bearer ${providerToken}` },
-        });
+        // If this account has MFA set up but the second step wasn't completed, send them back to log in.
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+          router.push('/recruiter/login');
+          return;
+        }
 
-        if (memberRes.ok) {
-          const memberData = await memberRes.json();
-          const roles: string[] = memberData.roles || [];
-          const permissions = BigInt(memberData.permissions || '0');
-          const isAdmin = (permissions & 0x8n) === 0x8n;
-
-          if (isAdmin || roles.includes(RECRUITER_ROLE_ID)) {
-            setAuthorized(true);
-            fetchApplications();
-          } else {
-            setAuthorized(false);
-          }
-        } else {
+        const allowed = await hasRecruiterAccess(u);
+        if (allowed) {
           setAuthorized(true);
           fetchApplications();
+        } else {
+          setAuthorized(false);
         }
       } catch (err) {
+        // Fail closed: if we can't verify the role, don't show the dashboard.
         console.error('Role verification error:', err);
-        setAuthorized(true);
-        fetchApplications();
+        setAuthorized(false);
       } finally {
         setLoading(false);
       }
@@ -157,6 +148,36 @@ export default function RecruiterPortalPage() {
 
     verifyAccess();
   }, [router]);
+
+  // Auto sign-out after 30 minutes of inactivity.
+  useEffect(() => {
+    if (!authorized) return;
+
+    const LIMIT = 30 * 60 * 1000;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        await supabase.auth.signOut();
+        router.push('/recruiter/login?reason=timeout');
+      }, LIMIT);
+    };
+
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach((ev) => window.addEventListener(ev, reset));
+    reset();
+
+    return () => {
+      clearTimeout(timer);
+      events.forEach((ev) => window.removeEventListener(ev, reset));
+    };
+  }, [authorized, router]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/recruiter/login');
+  };
 
   // Look up Roblox avatars + account creation dates for any new usernames.
   useEffect(() => {
@@ -270,7 +291,7 @@ export default function RecruiterPortalPage() {
         </div>
         <h1 className="text-2xl font-extrabold text-slate-900">Access Restricted</h1>
         <p className="text-slate-600 text-sm max-w-md">
-          Your account does not have the required Discord recruiter role or administrator access.
+          Your account does not have recruiter or administrator access.
         </p>
         <Link href="/" className="px-5 py-2.5 bg-blue-900 text-white font-bold text-xs rounded-xl hover:bg-blue-800 transition">
           Return to Home
@@ -379,12 +400,20 @@ export default function RecruiterPortalPage() {
           <span className="text-slate-600">Dashboard</span>
         </div>
 
-        <Link
-          href="/"
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
-        >
-          ← Exit to Main Site
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
+          >
+            ← Exit to Main Site
+          </Link>
+          <button
+            onClick={handleSignOut}
+            className="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl transition"
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
 
       {/* TITLE + SEARCH + DEPARTMENT FILTER */}
