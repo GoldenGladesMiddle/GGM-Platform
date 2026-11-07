@@ -36,7 +36,10 @@ export async function checkAccess(req: NextRequest): Promise<{ status: AccessSta
 
   const botToken = process.env.DISCORD_BOT_TOKEN;
   const guildId = process.env.DISCORD_GUILD_ID || process.env.NEXT_PUBLIC_DISCORD_GUILD_ID;
-  if (!botToken || !guildId) return { status: 'error' };
+  if (!botToken || !guildId) {
+  console.error('verify-access: missing env', { hasBotToken: !!botToken, hasGuildId: !!guildId });
+  return { status: 'error' };
+}
 
   try {
     const res = await fetch(
@@ -45,7 +48,10 @@ export async function checkAccess(req: NextRequest): Promise<{ status: AccessSta
     );
 
     if (res.status === 404) return { status: 'not_in_server' };
-    if (!res.ok) return { status: 'error' };
+    if (!res.ok) {
+  console.error('verify-access: Discord API error', res.status, await res.text());
+  return { status: 'error' };
+}
 
     const member = await res.json();
     const roles: string[] = member.roles || [];
