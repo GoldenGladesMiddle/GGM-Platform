@@ -1,36 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const ALLOWED_ROLES = ['recruiter', 'admin'];
-
-async function requireUser(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '');
-  if (!token) return null;
-
-  // Client acts as the signed-in user so row-level security applies to the role lookup.
-  const sb = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  );
-
-  const { data, error } = await sb.auth.getUser(token);
-  if (error || !data.user) return null;
-
-  const metaRole = data.user.app_metadata?.role;
-  if (metaRole && ALLOWED_ROLES.includes(metaRole)) return data.user;
-
-  const { data: roles, error: rolesError } = await sb
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', data.user.id);
-
-  if (rolesError) return null;
-  return (roles || []).some((r: { role: string }) => ALLOWED_ROLES.includes(r.role)) ? data.user : null;
-}
+import { checkAccess } from '@/lib/serverAccess';
 
 export async function POST(req: NextRequest) {
-  if (!(await requireUser(req))) {
+  const access = await checkAccess(req);
+  if (access.status !== 'allowed') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
